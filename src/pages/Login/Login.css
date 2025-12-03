@@ -1,0 +1,106 @@
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@300;400;500;600&display=swap');
+
+/* Background */
+body {
+  font-family: "Inter", sans-serif;
+}
+
+.login-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0a1930, #1c2d48);
+  padding: 10px;
+}
+
+/* CARD: Make it smaller */
+.login-card {
+  width: 650px;               /* reduced from 850px */
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+  transition: 0.3s ease-in-out;
+}
+
+/* LEFT IMAGE SECTION */
+.login-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* RIGHT FORM SECTION */
+.form-section {
+  padding: 25px;               /* reduced from 40px */
+  background: rgba(255, 255, 255, 0.30);
+  backdrop-filter: blur(15px);
+}
+
+.login-title {
+  font-size: 20px;             /* reduced */
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1a1a1a;
+}
+
+/* LABEL */
+.input-label {
+  font-size: 16px;             /* smaller */
+  font-weight: 500;
+}
+
+/* INPUTS */
+.custom-input {
+  height: 38px;                /* smaller */
+  font-size: 14px;
+  border-radius: 8px;
+  padding-left: 10px;
+}
+
+/* Forgot Password */
+.forgot-link {
+  font-size: 12px;
+}
+
+/* Remember me */
+.remember-label {
+  font-size: 13px;
+}
+
+/* LOGIN BUTTON */
+.login-btn {
+  padding: 8px;                /* smaller button */
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #f77f54, #fc5803);
+  border: none;
+}
+
+/* SIGNUP TEXT */
+.signup-text {
+  font-size: 13px;
+}
+
+.signup-link {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+  .login-card {
+    width: 90%;
+  }
+
+  .login-image {
+    display: none;
+  }
+
+  .form-section {
+    padding: 20px;
+  }
+}
