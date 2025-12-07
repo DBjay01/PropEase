@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate()
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+
+  const getLogin = () =>{
+      navigate('/')
+  }
 
   return (
     <>
@@ -190,7 +196,7 @@ export default function Header() {
             <div className="logo-circle">
               <div className="logo-circle-inner"></div>
             </div>
-            <span className="logo-text">propEase</span>
+            <span className="logo-text">PropEase</span>
           </a>
 
           <button className="navbar-toggler" onClick={toggleMenu}>
@@ -198,12 +204,31 @@ export default function Header() {
           </button>
 
           <ul className={`navbar-menu ${isOpen ? 'active' : ''}`}>
-            <li><a href="#home" className="nav-link">HOME</a></li>
-            <li><a href="#properties" className="nav-link">PROPERTIES</a></li>
-            <li><a href="#agents" className="nav-link">AGENTS</a></li>
-            <li><a href="#blog" className="nav-link">BLOG</a></li>
-            <li><button className="login-btn">LOG IN</button></li>
+            <li><a href="home" className="nav-link">HOME</a></li>
+            <li><a href="PropertyListing" className="nav-link">PROPERTIES</a></li>
+                        <li><a href="PropertyDetailsPage" className="nav-link">PROPERTIES DETAILS</a></li>
+            <li><a href="AboutUs" className="nav-link">ABOUT US</a></li>
+            <li><a href="ContactUs" className="nav-link">CONTACT US</a></li>
+
+            <li><button className="login-btn" onClick={getLogin}>LOG IN</button></li>
           </ul>
+          
+        </div>
+        <div className="navbar-container">
+
+          <ul className={`navbar-menu ${isOpen ? 'active' : ''}`}>
+
+            <li><a href="BuyerDashboard" className="nav-link">BuyerDashboard </a></li>
+            <li><a href="SellerDashboard" className="nav-link">SellerDashboard</a></li>
+            <li><a href="AdminDashboard" className="nav-link">AdminDashboard</a></li>
+
+            <li><a href="SellerPropertiesList" className="nav-link">Seller Properties </a></li>
+            <li><a href="AdminPropertyList" className="nav-link">Admin Property </a></li>
+            <li><a href="AdminPropertyList" className="nav-link">All Users List</a></li>
+            <li><a href="AdminProfile" className="nav-link">Profile</a></li>
+
+          </ul>
+          
         </div>
       </nav>
     </>

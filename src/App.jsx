@@ -3,11 +3,10 @@
 // import viteLogo from '/vite.svg'
 import './App.css'
 import { Route, Routes } from 'react-router-dom'
-import Header from './Component/Header'
+import MainLayout from './MainLayout'
 import PropertyHeroSection from './pages/PropertyHeroSection/PropertyHeroSection'
 import LoginPage from './pages/LoginPage/LoginPage'
 import RegistrationPage from './pages/RegistrationPage/RegistrationPage'
-import Footer from './Component/Footer'
 import PropertyListingPage from './pages/PropertyListingPage/PropertyListingPage'
 import BuyerDashboard from './pages/BuyerDashboard/BuyerDashboard'
 import PropertyDetailsPage from './pages/PropertyDetailsPage/PropertyDetailsPage'
@@ -26,73 +25,30 @@ function App() {
   return (
     <>
     <div>
-      <Header></Header>
       <Routes>
-        <Route
-          path='/'
-          element={<LoginPage/>}
-        />
+        {/* Auth routes (no Header/Footer) */}
+        <Route path='/' element={<LoginPage/>} />
+        <Route path='register' element={<RegistrationPage/>} />
 
-        <Route
-          path='register'
-          element={<RegistrationPage />}
-        />
-        <Route
-          path='Home'
-          element={<PropertyHeroSection></PropertyHeroSection>}
-        />
-        <Route
-          path='PropertyListing'
-          element={<PropertyListingPage/>}
-        />
-        <Route
-          path='BuyerDashboard'
-          element={<BuyerDashboard/>}
-        />
-        <Route
-          path='SellerDashboard'
-          element={<SellerDashboard/>}
-        />
-        <Route
-          path='PropertyDetailsPage'
-          element={<PropertyDetailsPage/>}
-        />
-        <Route
-          path='ContactUs'
-          element={<ContactUs/>}
-        />
-        <Route
-          path='AdminProfile'
-          element={<AdminProfile/>}
-        />
-        <Route
-          path='AdminDashboard'
-          element={<AdminDashboard/>}
-        />
+        {/* All other routes render inside MainLayout (Header + Outlet + Footer) */}
+        <Route element={<MainLayout/>}>
+          <Route path='home' element={<PropertyHeroSection/>} />
+          <Route path='PropertyListing' element={<PropertyListingPage/>} />
+          <Route path='BuyerDashboard' element={<BuyerDashboard/>} />
+          <Route path='SellerDashboard' element={<SellerDashboard/>} />
+          <Route path='PropertyDetailsPage' element={<PropertyDetailsPage/>} />
+          <Route path='ContactUs' element={<ContactUs/>} />
+          <Route path='AdminProfile' element={<AdminProfile/>} />
+          <Route path='AdminDashboard' element={<AdminDashboard/>} />
+          <Route path='SellerPropertiesList' element={<SellerPropertiesList/>} />
+          <Route path='AboutUs' element={<AboutUs/>} />
+          <Route path='AdminPropertyList' element={<AdminPropertyList/>} />
+          <Route path='AdminUsersList' element={<AdminUsersList/>} />
+        </Route>
 
-         {/* <Route
-          path='MyPropertiesList'
-          element={<MyPropertiesList/>}
-        /> */}
-      
-        <Route
-          path='SellerPropertiesList'
-          element={<SellerPropertiesList/>}
-        />
-        <Route
-          path='AboutUs'
-          element={<AboutUs/>}
-        />
-        <Route
-          path='AdminPropertyList'
-          element={<AdminPropertyList/>}
-        />
-        <Route
-          path='AdminUsersList'
-          element={<AdminUsersList/>}
-        />
+        {/* Fallback: redirect unknown routes to login (adjust if you prefer different behavior) */}
+        <Route path='*' element={<LoginPage/>} />
       </Routes>
-      <Footer/>
     </div>
     </>
   )
