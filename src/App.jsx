@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage/LoginPage'
 import RegistrationPage from './pages/RegistrationPage/RegistrationPage'
 import Footer from './Component/Footer'
 import PropertyListingPage from './pages/PropertyListingPage/PropertyListingPage'
+import BuyerDashboard from './pages/BuyerDashboard/BuyerDashboard'
 
 function App() {
 
@@ -33,6 +34,10 @@ function App() {
         <Route
           path='PropertyListing'
           element={<PropertyListingPage/>}
+        />
+        <Route
+          path='BuyerDashboard'
+          element={<BuyerDashboard/>}
         />
 
       </Routes>
