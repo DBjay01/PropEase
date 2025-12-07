@@ -324,7 +324,7 @@ export default function LoginPage() {
               <div className="logo-circle">
                 <div className="logo-circle-inner"></div>
               </div>
-              <span className="logo-text">logoipsum</span>
+              <span className="logo-text">PropEase</span>
             </div>
 
             <h1 className="login-title">Welcome back</h1>

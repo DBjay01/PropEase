@@ -319,7 +319,7 @@ export default function RegistrationPage() {
               <div className="logo-circle">
                 <div className="logo-circle-inner"></div>
               </div>
-              <span className="logo-text">logoipsum</span>
+              <span className="logo-text">propEase</span>
             </div>
 
             <h1 className="register-title">Create account</h1>

@@ -395,7 +395,7 @@ export default function ContactUs() {
                     <i className="fas fa-envelope"></i>
                   </div>
                   <h3>Email Us</h3>
-                  <p>info@logoipsum.com<br />support@logoipsum.com</p>
+                  <p>info@propEase.com<br />support@propEase.com</p>
                 </div>
               </div>
               <div className="col-md-6 col-lg-4">
@@ -537,7 +537,7 @@ export default function ContactUs() {
                       Email Support
                     </h4>
                     <p>Send us detailed questions and we'll respond within 24 hours.</p>
-                    <span className="contact-info">info@logoipsum.com</span>
+                    <span className="contact-info">info@propEase.com</span>
                   </div>
 
                   <div className="help-card">

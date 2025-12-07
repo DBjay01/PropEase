@@ -311,7 +311,7 @@ export default function AboutUs() {
         <div className="container">
           <div className="hero-content">
             <div className="hero-text">
-              <div className="subtitle">About LogoIpsum</div>
+              <div className="subtitle">About propEase</div>
               <h1>Easy way to find a perfect property</h1>
               <p>
                 We provide a complete service for the sale, purchase or rental of real estate. 

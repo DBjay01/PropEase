@@ -190,7 +190,7 @@ export default function Header() {
             <div className="logo-circle">
               <div className="logo-circle-inner"></div>
             </div>
-            <span className="logo-text">logoipsum</span>
+            <span className="logo-text">propEase</span>
           </a>
 
           <button className="navbar-toggler" onClick={toggleMenu}>

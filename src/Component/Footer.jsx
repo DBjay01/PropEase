@@ -272,7 +272,7 @@ export default function Footer() {
                   <div className="logo-circle-inner"></div>
                 </div>
                 <div>
-                  <span className="logo-text">logoipsum</span>
+                  <span className="logo-text">propEase</span>
                   <span className="logo-domain">.com</span>
                 </div>
               </div>

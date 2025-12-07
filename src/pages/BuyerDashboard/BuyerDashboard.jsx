@@ -602,7 +602,7 @@ export default function BuyerDashboard() {
             <div className="logo-circle">
               <div className="logo-circle-inner"></div>
             </div>
-            <span className="logo-text">logoipsum</span>
+            <span className="logo-text">propEase</span>
           </div>
 
           <nav className="nav-menu">
