@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+    const navigate = useNavigate()
+
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Login attempt:', { email, password });
+    navigate('home')
   };
+
+
 
   return (
     <>
@@ -383,8 +390,9 @@ export default function LoginPage() {
               </div>
 
               <button onClick={handleSubmit} className="login-button">
-                Sign In
+                Sign In 
               </button>
+
             </div>
 
             <div className="divider">
@@ -412,7 +420,7 @@ export default function LoginPage() {
             </div>
 
             <p className="signup-text">
-              Don't have an account? <a href="#" className="signup-link">Sign up</a>
+              Don't have an account? <a href="register" className="signup-link">Sign up</a>
             </p>
           </div>
         </div>
