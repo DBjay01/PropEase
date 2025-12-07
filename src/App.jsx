@@ -13,6 +13,10 @@ import BuyerDashboard from './pages/BuyerDashboard/BuyerDashboard'
 import PropertyDetailsPage from './pages/PropertyDetailsPage/PropertyDetailsPage'
 import SellerDashboard from './pages/SellerDashboard/SellerDashboard'
 import ContactUs from './pages/ContactUs/ContactUs'
+import AdminProfile from './pages/AdminProfile/AdminProfile'
+import AdminDashboard from './pages/AdminDashboard/AdminDashboard'
+// import MyPropertiesList from './pages/MyPropertiesList/MyPropertiesList'
+import SellerPropertiesList from './pages/SellerPropertiesList/SellerPropertiesList'
 
 function App() {
 
@@ -54,7 +58,24 @@ function App() {
           path='ContactUs'
           element={<ContactUs/>}
         />
+        <Route
+          path='AdminProfile'
+          element={<AdminProfile/>}
+        />
+        <Route
+          path='AdminDashboard'
+          element={<AdminDashboard/>}
+        />
 
+         {/* <Route
+          path='MyPropertiesList'
+          element={<MyPropertiesList/>}
+        /> */}
+      
+        <Route
+          path='SellerPropertiesList'
+          element={<SellerPropertiesList/>}
+        />
       </Routes>
       <Footer/>
     </div>
