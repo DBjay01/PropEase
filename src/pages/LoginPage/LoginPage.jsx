@@ -13,6 +13,7 @@ export default function LoginPage() {
 
   return (
     <>
+    
       <style>{`
         * {
           margin: 0;
@@ -306,6 +307,7 @@ export default function LoginPage() {
       `}</style>
 
       <div className="login-page">
+        
         <div className="login-left">
           <div className="login-image-wrapper">
             <img 

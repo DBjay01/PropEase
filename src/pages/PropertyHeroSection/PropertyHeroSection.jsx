@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, MapPin, ChevronDown } from 'lucide-react';
+import Header from '../../Component/Header';
 
 export default function PropertyHeroSection() {
   const [activeTab, setActiveTab] = useState('rent');
@@ -521,8 +522,9 @@ export default function PropertyHeroSection() {
           }
         }
       `}</style>
-
+        
       <div className="hero-section">
+        
         <div className="container">
           <div className="content-left">
             <h1 className="hero-title">
