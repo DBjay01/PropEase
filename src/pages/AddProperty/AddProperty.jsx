@@ -1,32 +1,38 @@
+// ...existing code...
 import React, { useState } from 'react';
-import { Upload, X, MapPin, Home, Bed, Bath, Square, DollarSign } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AddProperty() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
-    location: '',
-    propertyType: 'house',
-    bedrooms: '',
-    bathrooms: '',
-    area: '',
-    amenities: [],
-    images: [],
-    featured: false
+    city: '',
+    state: '',
+    pincode: '',
+    propertyType: 'HOUSE',
+    status: 'AVAILABLE',
   });
 
-  const [imagePreview, setImagePreview] = useState([]);
+  const [amenities] = useState(['WiFi', 'Parking', 'Pool', 'Gym', 'Security']);
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [images, setImages] = useState([]); // File objects
+  const [imagePreview, setImagePreview] = useState([]); // dataURLs
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const propertyTypes = ['House', 'Apartment', 'Villa', 'Condo', 'Townhouse'];
-  const amenitiesList = ['WiFi', 'Parking', 'Pool', 'Gym', 'Security', 'Garden', 'Balcony', 'Air Conditioning'];
+  const propertyTypes = ['APARTMENT', 'HOUSE', 'VILLA', 'LAND'];
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    const { name, value } = e.target;
+    setFormData((p) => ({ ...p, [name]: value }));
+  };
+
+  const toggleAmenity = (a) => {
+    setSelectedAmenities((prev) => (prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]));
   };
 
   const handleImageUpload = (e) => {
@@ -35,655 +41,230 @@ export default function AddProperty() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(prev => [...prev, reader.result]);
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, file]
-        }));
       };
       reader.readAsDataURL(file);
     });
+    setImages(prev => [...prev, ...files]);
   };
 
   const removeImage = (index) => {
     setImagePreview(prev => prev.filter((_, i) => i !== index));
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const toggleAmenity = (amenity) => {
-    setFormData(prev => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
+  const getSellerIdFromStorage = () => {
+    try {
+      const st = localStorage.getItem('user');
+      if (!st) return null;
+      const u = JSON.parse(st);
+      return u?.id ?? u?.userId ?? u?.sellerId ?? null;
+    } catch {
+      return null;
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form Data:', formData);
-    alert('Property added successfully!');
-    // Reset form
-    setFormData({
-      title: '',
-      description: '',
-      price: '',
-      location: '',
-      propertyType: 'house',
-      bedrooms: '',
-      bathrooms: '',
-      area: '',
-      amenities: [],
-      images: [],
-      featured: false
-    });
-    setImagePreview([]);
+    setError('');
+    setSubmitting(true);
+
+    const sellerId = getSellerIdFromStorage();
+    if (!sellerId) {
+      setError('Seller ID not found. Please login as a seller.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 1) Create property (JSON) - API: POST /api/properties
+    const createPayload = {
+      title: formData.title,
+      description: formData.description,
+      price: Number(formData.price),
+      city: formData.city,
+      state: formData.state,
+      pincode: formData.pincode,
+      propertyType: formData.propertyType,
+      sellerId: sellerId
+    };
+
+    // include status only if you want to send it (your API example didn't include it)
+    if (formData.status) createPayload.status = formData.status;
+
+    try {
+      const createRes = await fetch('http://localhost:8080/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createPayload)
+      });
+
+      if (!createRes.ok) {
+        const text = await createRes.text();
+        throw new Error(text || 'Failed to create property');
+      }
+
+      const created = await createRes.json();
+
+      // extract propertyId from response (try common fields)
+      const propertyId = created?.propertyId ?? created?.id ?? created?.property_id;
+      if (!propertyId) {
+        throw new Error('Property created but propertyId not returned by server.');
+      }
+
+      // 2) Upload images to /api/properties/{propertyId}/images as form-data (key: images)
+      if (images.length > 0) {
+        const form = new FormData();
+        images.forEach((file) => form.append('images', file)); // backend expects 'images'
+
+        const uploadRes = await fetch(`http://localhost:8080/api/properties/${propertyId}/images`, {
+          method: 'POST',
+          body: form
+        });
+
+        if (!uploadRes.ok) {
+          const text = await uploadRes.text();
+          throw new Error(text || 'Image upload failed');
+        }
+      }
+
+      // success
+      alert('Property created successfully');
+      setFormData({
+        title: '',
+        description: '',
+        price: '',
+        city: '',
+        state: '',
+        pincode: '',
+        propertyType: 'HOUSE',
+        status: 'AVAILABLE',
+      });
+      setSelectedAmenities([]);
+      setImages([]);
+      setImagePreview([]);
+      navigate('/SellerPropertiesList');
+    } catch (err) {
+      setError(err.message || 'Error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <>
       <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-          background: #f9fafb;
-        }
-
-        .add-property-page {
-          min-height: 100vh;
-          background: #f9fafb;
-          padding: 2rem;
-        }
-
-        .page-header {
-          max-width: 900px;
-          margin: 0 auto 2rem;
-        }
-
-        .page-title {
-          font-size: 2.5rem;
-          font-weight: 700;
-          color: #1a1a2e;
-          margin-bottom: 0.5rem;
-        }
-
-        .page-subtitle {
-          color: #6b7280;
-          font-size: 1rem;
-        }
-
-        .form-container {
-          max-width: 900px;
-          margin: 0 auto;
-          background: white;
-          border-radius: 20px;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-          padding: 2.5rem;
-        }
-
-        .form-section {
-          margin-bottom: 2.5rem;
-        }
-
-        .section-title {
-          font-size: 1.25rem;
-          font-weight: 600;
-          color: #1a1a2e;
-          margin-bottom: 1.5rem;
-          padding-bottom: 1rem;
-          border-bottom: 2px solid #e5e7eb;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .form-row.full {
-          grid-template-columns: 1fr;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .form-label {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: #1a1a2e;
-          margin-bottom: 0.5rem;
-        }
-
-        .required {
-          color: #ef4444;
-          margin-left: 0.25rem;
-        }
-
-        .input-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
-          width: 100%;
-          padding: 0.875rem 1rem 0.875rem 3rem;
-          border: 2px solid #e5e7eb;
-          background: white;
-          border-radius: 12px;
-          font-size: 0.875rem;
-          color: #1a1a2e;
-          outline: none;
-          transition: border-color 0.3s ease;
-          font-family: inherit;
-        }
-
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-          border-color: #3b82f6;
-        }
-
-        .form-input::placeholder,
-        .form-textarea::placeholder {
-          color: #9ca3af;
-        }
-
-        .form-input-icon {
-          position: absolute;
-          left: 1rem;
-          color: #9ca3af;
-          pointer-events: none;
-        }
-
-        .form-select {
-          appearance: none;
-          cursor: pointer;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 1rem center;
-          padding-right: 2.5rem;
-        }
-
-        .form-textarea {
-          padding: 1rem 1rem 1rem 3rem;
-          resize: vertical;
-          min-height: 120px;
-        }
-
-        .image-upload-area {
-          border: 2px dashed #3b82f6;
-          border-radius: 12px;
-          padding: 2rem;
-          text-align: center;
-          background: #f0f9ff;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .image-upload-area:hover {
-          border-color: #2563eb;
-          background: #e0f2fe;
-        }
-
-        .upload-icon {
-          color: #3b82f6;
-          margin-bottom: 0.5rem;
-        }
-
-        .upload-text {
-          color: #1a1a2e;
-          font-weight: 600;
-          font-size: 0.875rem;
-        }
-
-        .upload-subtext {
-          color: #6b7280;
-          font-size: 0.75rem;
-          margin-top: 0.25rem;
-        }
-
-        .image-input {
-          display: none;
-        }
-
-        .image-preview-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-          gap: 1rem;
-          margin-top: 1rem;
-        }
-
-        .image-preview-item {
-          position: relative;
-          aspect-ratio: 1;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .image-preview-item img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .remove-image-btn {
-          position: absolute;
-          top: 0.5rem;
-          right: 0.5rem;
-          width: 28px;
-          height: 28px;
-          background: #ef4444;
-          color: white;
-          border: none;
-          border-radius: 50%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background 0.3s ease;
-        }
-
-        .remove-image-btn:hover {
-          background: #dc2626;
-        }
-
-        .amenities-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-          gap: 1rem;
-        }
-
-        .amenity-item {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .amenity-checkbox {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-          accent-color: #3b82f6;
-        }
-
-        .amenity-label {
-          font-size: 0.875rem;
-          color: #1a1a2e;
-          cursor: pointer;
-        }
-
-        .checkbox-group {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .checkbox-input {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-          accent-color: #3b82f6;
-        }
-
-        .checkbox-label {
-          font-size: 0.875rem;
-          color: #6b7280;
-          cursor: pointer;
-        }
-
-        .form-buttons {
-          display: flex;
-          gap: 1rem;
-          justify-content: flex-end;
-          margin-top: 2rem;
-          padding-top: 2rem;
-          border-top: 2px solid #e5e7eb;
-        }
-
-        .btn {
-          padding: 0.875rem 2rem;
-          border: none;
-          border-radius: 12px;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-          background: #3b82f6;
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background: #2563eb;
-        }
-
-        .btn-secondary {
-          background: #e5e7eb;
-          color: #1a1a2e;
-        }
-
-        .btn-secondary:hover {
-          background: #d1d5db;
-        }
-
-        .features-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1rem;
-        }
-
-        @media (max-width: 768px) {
-          .form-row {
-            grid-template-columns: 1fr;
-          }
-
-          .features-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .amenities-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .form-container {
-            padding: 1.5rem;
-          }
-
-          .page-title {
-            font-size: 2rem;
-          }
-
-          .add-property-page {
-            padding: 1rem;
-          }
-
-          .form-buttons {
-            flex-direction: column;
-          }
-
-          .btn {
-            width: 100%;
-          }
-        }
+        .add-property-page { padding: 2rem; background: #f9fafb; min-height: 100vh; }
+        .form-container { max-width: 900px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+        .form-row { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; margin-bottom: 1rem; }
+        .form-row.full { grid-template-columns: 1fr; }
+        .form-label { font-weight: 600; margin-bottom: 0.5rem; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .image-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 0.75rem; margin-top: 1rem; }
+        .image-preview-item { position: relative; border-radius: 8px; overflow: hidden; }
+        .remove-image-btn { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color:#fff; border: none; padding: 6px; border-radius: 50%; cursor:pointer; }
+        .btn { padding: 0.75rem 1.5rem; border-radius: 8px; border: none; cursor:pointer; }
+        .btn-primary { background:#3b82f6; color:#fff; }
+        .btn-secondary { background:#e5e7eb; }
+        .amenities-grid { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem; }
+        .amenity-chip { padding:0.4rem 0.6rem; border-radius:999px; border:1px solid #e5e7eb; cursor:pointer; }
+        @media (max-width:768px) { .form-row { grid-template-columns: 1fr; } }
       `}</style>
 
       <div className="add-property-page">
-        <div className="page-header">
-          <h1 className="page-title">Add New Property</h1>
-          <p className="page-subtitle">List your property on PropEase and reach potential buyers</p>
-        </div>
-
         <div className="form-container">
+          <h2 style={{ marginBottom: '1rem' }}>Add New Property</h2>
+          {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
           <form onSubmit={handleSubmit}>
-            {/* Basic Information */}
-            <div className="form-section">
-              <h2 className="section-title">Basic Information</h2>
-              
-              <div className="form-row full">
-                <div className="form-group">
-                  <label className="form-label">
-                    Property Title <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <Home size={18} className="form-input-icon" />
-                    <input
-                      type="text"
-                      name="title"
-                      placeholder="e.g., Modern 3BHK House in Downtown"
-                      className="form-input"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-row full">
-                <div className="form-group">
-                  <label className="form-label">
-                    Description <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <textarea
-                      name="description"
-                      placeholder="Describe your property in detail..."
-                      className="form-textarea"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      required
-                      style={{ paddingLeft: '1rem' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">
-                    Price <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <DollarSign size={18} className="form-input-icon" />
-                    <input
-                      type="number"
-                      name="price"
-                      placeholder="Enter price"
-                      className="form-input"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    Location <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <MapPin size={18} className="form-input-icon" />
-                    <input
-                      type="text"
-                      name="location"
-                      placeholder="e.g., Sydney, NSW"
-                      className="form-input"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
+            <div className="form-row full">
+              <div>
+                <label className="form-label">Title</label>
+                <input name="title" value={formData.title} onChange={handleInputChange} className="form-input" required />
               </div>
             </div>
 
-            {/* Property Details */}
-            <div className="form-section">
-              <h2 className="section-title">Property Details</h2>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">
-                    Property Type <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <Home size={18} className="form-input-icon" />
-                    <select
-                      name="propertyType"
-                      className="form-select"
-                      value={formData.propertyType}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      {propertyTypes.map(type => (
-                        <option key={type} value={type.toLowerCase()}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    Bedrooms <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <Bed size={18} className="form-input-icon" />
-                    <input
-                      type="number"
-                      name="bedrooms"
-                      placeholder="Number of bedrooms"
-                      className="form-input"
-                      value={formData.bedrooms}
-                      onChange={handleInputChange}
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">
-                    Bathrooms <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <Bath size={18} className="form-input-icon" />
-                    <input
-                      type="number"
-                      name="bathrooms"
-                      placeholder="Number of bathrooms"
-                      className="form-input"
-                      value={formData.bathrooms}
-                      onChange={handleInputChange}
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    Area (Sq. Meters) <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <Square size={18} className="form-input-icon" />
-                    <input
-                      type="number"
-                      name="area"
-                      placeholder="Property area"
-                      className="form-input"
-                      value={formData.area}
-                      onChange={handleInputChange}
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
+            <div className="form-row full">
+              <div>
+                <label className="form-label">Description</label>
+                <textarea name="description" value={formData.description} onChange={handleInputChange} className="form-textarea" rows={5} required />
               </div>
             </div>
 
-            {/* Amenities */}
+            <div className="form-row">
+              <div>
+                <label className="form-label">Price (INR)</label>
+                <input type="number" name="price" value={formData.price} onChange={handleInputChange} className="form-input" step="0.01" required />
+              </div>
+
+              <div>
+                <label className="form-label">Property Type</label>
+                <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} className="form-select" required>
+                  {propertyTypes.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div>
+                <label className="form-label">City</label>
+                <input name="city" value={formData.city} onChange={handleInputChange} className="form-input" required />
+              </div>
+              <div>
+                <label className="form-label">State</label>
+                <input name="state" value={formData.state} onChange={handleInputChange} className="form-input" required />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div>
+                <label className="form-label">Pincode</label>
+                <input name="pincode" value={formData.pincode} onChange={handleInputChange} className="form-input" />
+              </div>
+              <div>
+                <label className="form-label">Status</label>
+                <select name="status" value={formData.status} onChange={handleInputChange} className="form-select">
+                  <option value="AVAILABLE">AVAILABLE</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="SOLD">SOLD</option>
+                </select>
+              </div>
+            </div>
+
             <div className="form-section">
-              <h2 className="section-title">Amenities</h2>
+              <label className="form-label">Amenities</label>
               <div className="amenities-grid">
-                {amenitiesList.map(amenity => (
-                  <div key={amenity} className="amenity-item">
-                    <input
-                      type="checkbox"
-                      id={amenity}
-                      className="amenity-checkbox"
-                      checked={formData.amenities.includes(amenity)}
-                      onChange={() => toggleAmenity(amenity)}
-                    />
-                    <label htmlFor={amenity} className="amenity-label">
-                      {amenity}
-                    </label>
+                {amenities.map(a => (
+                  <div
+                    key={a}
+                    className="amenity-chip"
+                    onClick={() => toggleAmenity(a)}
+                    style={{ background: selectedAmenities.includes(a) ? '#e0f2fe' : 'transparent', borderColor: selectedAmenities.includes(a) ? '#3b82f6' : '#e5e7eb' }}
+                  >
+                    {a}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Images */}
-            <div className="form-section">
-              <h2 className="section-title">Property Images</h2>
-              <label htmlFor="image-input">
-                <div className="image-upload-area">
-                  <Upload size={32} className="upload-icon" />
-                  <div className="upload-text">Click to upload images</div>
-                  <div className="upload-subtext">PNG, JPG, GIF up to 10MB</div>
-                </div>
+            <div style={{ marginTop: '1rem' }}>
+              <label className="form-label">Property Images</label>
+              <label htmlFor="image-input" style={{ display: 'block', cursor: 'pointer', padding: '1rem', border: '2px dashed #3b82f6', borderRadius: 8, textAlign: 'center', background: '#f0f9ff' }}>
+                <Upload size={20} /> Click or drop to upload images
               </label>
-              <input
-                id="image-input"
-                type="file"
-                multiple
-                accept="image/*"
-                className="image-input"
-                onChange={handleImageUpload}
-              />
+              <input id="image-input" type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleImageUpload} />
               {imagePreview.length > 0 && (
                 <div className="image-preview-grid">
-                  {imagePreview.map((preview, index) => (
-                    <div key={index} className="image-preview-item">
-                      <img src={preview} alt={`Preview ${index + 1}`} />
-                      <button
-                        type="button"
-                        className="remove-image-btn"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X size={16} />
-                      </button>
+                  {imagePreview.map((src, i) => (
+                    <div key={i} className="image-preview-item">
+                      <img src={src} alt={`preview-${i}`} style={{ width: '100%', height: 120, objectFit: 'cover' }} />
+                      <button type="button" className="remove-image-btn" onClick={() => removeImage(i)}><X size={14} color="#fff" /></button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Additional Options */}
-            <div className="form-section">
-              <h2 className="section-title">Additional Options</h2>
-              <div className="checkbox-group">
-                <input
-                  type="checkbox"
-                  id="featured"
-                  name="featured"
-                  className="checkbox-input"
-                  checked={formData.featured}
-                  onChange={handleInputChange}
-                />
-                <label htmlFor="featured" className="checkbox-label">
-                  Mark as Featured (Premium listing)
-                </label>
-              </div>
-            </div>
-
-            {/* Form Buttons */}
-            <div className="form-buttons">
-              <button type="button" className="btn btn-secondary">
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                Publish Property
-              </button>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? 'Publishing...' : 'Publish Property'}</button>
             </div>
           </form>
         </div>
@@ -691,3 +272,4 @@ export default function AddProperty() {
     </>
   );
 }
+// ...existing code...
