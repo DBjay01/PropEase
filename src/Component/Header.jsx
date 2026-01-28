@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate()
+  const [userRole, setUserRole] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        setUserRole(u?.role ?? null);
+      } else {
+        setUserRole(null);
+      }
+    } catch (e) {
+      setUserRole(null);
+    }
+  }, []);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
 
-  const getLogin = () =>{
-      navigate('/')
-  }
+  const handleAuthButton = () => {
+    if (userRole) {
+      // logout
+      localStorage.removeItem('user');
+      setUserRole(null);
+      navigate('/');
+    } else {
+      // go to login
+      navigate('/');
+    }
+  };
 
   return (
     <>
@@ -198,44 +221,51 @@ export default function Header() {
       <nav className="navbar header">
         <div className="navbar-container">
           <a href="#" className="navbar-brand">
-            {/* <div className="logo-circle">
-              <div className="logo-circle-inner"></div>
-            </div> */}
             <img src="/logo2.png" alt="img" height={35} className='logoimg' />
             <span className="logo-text">PropEase</span>
           </a>
 
           <button className="navbar-toggler" onClick={toggleMenu}>
-            <div className={`hamburger ₹{isOpen ? 'active' : ''}`}></div>
+            <div className={`hamburger ${isOpen ? 'active' : ''}`}></div>
           </button>
 
-          <ul className={`navbar-menu ₹{isOpen ? 'active' : ''}`}>
+          <ul className={`navbar-menu ${isOpen ? 'active' : ''}`}>
             <li><a href="home" className="nav-link">HOME</a></li>
             <li><a href="PropertyListing" className="nav-link">PROPERTIES</a></li>
-            <li><a href="PropertyDetailsPage/3" className="nav-link">PROPERTIES DETAILS</a></li>
-            <li><a href="AboutUs" className="nav-link">ABOUT US</a></li>
-            <li><a href="ContactUs" className="nav-link">CONTACT US</a></li>
 
-            <li><button className="login-btn" onClick={getLogin}>LOG OUT</button></li>
+            {/* Role-specific links */}
+            {userRole === 'ADMIN' && (
+              <>
+                <li><a href="/AdminDashboard" className="nav-link">ADMIN DASHBOARD</a></li>
+                <li><a href="/AdminPropertyList" className="nav-link">MANAGE PROPERTIES</a></li>
+                <li><a href="/AdminUsersList" className="nav-link">USERS</a></li>
+                <li><a href="/AdminProfile" className="nav-link">PROFILE</a></li>
+              </>
+            )}
+
+            {userRole === 'SELLER' && (
+              <>
+                <li><a href="/SellerDashboard" className="nav-link">SELLER DASHBOARD</a></li>
+                <li><a href="/SellerPropertiesList" className="nav-link">MY PROPERTIES</a></li>
+                <li><a href="/AddProperty" className="nav-link">ADD PROPERTY</a></li>
+                <li><a href="/AdminProfile" className="nav-link">PROFILE</a></li>
+              </>
+            )}
+
+            {(!userRole || userRole === 'BUYER') && (
+              <>
+                <li><a href="/BuyerDashboard" className="nav-link">DASHBOARD</a></li>
+                <li><a href="/ContactUs" className="nav-link">CONTACT US</a></li>
+              </>
+            )}
+
+            <li>
+              <button className="login-btn" onClick={handleAuthButton}>
+                {userRole ? 'LOG OUT' : 'LOG IN'}
+              </button>
+            </li>
           </ul>
-          
         </div>
-        {/* <div className="navbar-container">
-
-          <ul className={`navbar-menu ₹{isOpen ? 'active' : ''}`}>
-
-            <li><a href="BuyerDashboard" className="nav-link">BuyerDashboard </a></li>
-            <li><a href="SellerDashboard" className="nav-link">SellerDashboard</a></li>
-            <li><a href="AdminDashboard" className="nav-link">AdminDashboard</a></li>
-
-            <li><a href="SellerPropertiesList" className="nav-link">Seller Properties </a></li>
-            <li><a href="AdminPropertyList" className="nav-link">Admin Property </a></li>
-            <li><a href="AdminUsersList" className="nav-link">All Users List</a></li>
-            <li><a href="AdminProfile" className="nav-link">Profile</a></li>
-
-          </ul>
-          
-        </div> */} 
       </nav>
     </>
   );

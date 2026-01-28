@@ -36,9 +36,9 @@ export default function LoginPage() {
 
       // Redirect based on role
       if (user.role === 'ADMIN') {
-        navigate('/home');
+        navigate('/AdminProfile');
       } else if (user.role === 'SELLER') {
-        navigate('/home');
+        navigate('/SellerDashboard');
       } else {
         navigate('/home');
       }
@@ -52,10 +52,6 @@ export default function LoginPage() {
 
   return (
     <>
-    
-      <style>{`
-        
-      `}</style>
 
       <div className="login-page">
         <div className="login-left">
