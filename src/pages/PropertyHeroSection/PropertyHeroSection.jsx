@@ -1,9 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, ChevronDown } from 'lucide-react';
 import Header from '../../Component/Header';
 
 export default function PropertyHeroSection() {
   const [activeTab, setActiveTab] = useState('rent');
+  const [recent, setRecent] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+  const [recentError, setRecentError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchRecent = async () => {
+      setLoadingRecent(true);
+      setRecentError('');
+      try {
+        const res = await fetch('http://localhost:8080/api/properties');
+        if (!res.ok) throw new Error('Failed to fetch properties');
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data?.data || []);
+        const sorted = list
+          .filter(Boolean)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 6);
+        if (mounted) setRecent(sorted);
+      } catch (err) {
+        if (mounted) setRecentError(err.message || 'Error');
+      } finally {
+        if (mounted) setLoadingRecent(false);
+      }
+    };
+
+    fetchRecent();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <>
@@ -678,137 +707,35 @@ export default function PropertyHeroSection() {
           </div>
 
           <div className="properties-grid">
-            <div className="property-card">
-              <div className="property-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400&q=80" 
-                  alt="Modern green building" 
-                  className="property-image"
-                />
-              </div>
-              <div className="property-content">
-                <h3 className="property-title">103/143 West Street, Crows Nest</h3>
-                <div className="property-details">
-                  <span className="property-detail">10 Bedroom</span>
-                  <span className="property-detail">150 M</span>
-                  <span className="property-detail">2 Garage</span>
-                </div>
-                <div className="property-footer">
-                  <span className="property-posted">Posted by X Builder</span>
-                  <span className="property-price">₹45,545</span>
-                </div>
-              </div>
-            </div>
+            {loadingRecent && <div style={{ padding: 20, color: '#6b7280' }}>Loading latest properties...</div>}
+            {recentError && <div style={{ padding: 20, color: 'red' }}>Error: {recentError}</div>}
+            {!loadingRecent && !recentError && recent.length === 0 && (
+              <div style={{ padding: 20, color: '#6b7280' }}>No properties found.</div>
+            )}
 
-            <div className="property-card">
-              <div className="property-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=400&q=80" 
-                  alt="Modern architecture" 
-                  className="property-image"
-                />
-              </div>
-              <div className="property-content">
-                <h3 className="property-title">103/143 West Street, Crows Nest</h3>
-                <div className="property-details">
-                  <span className="property-detail">10 Bedroom</span>
-                  <span className="property-detail">150 M</span>
-                  <span className="property-detail">2 Garage</span>
+            {recent.map((p) => {
+              const img = (p.images && p.images.length > 0) ? p.images[0] : 'https://images.unsplash.com/photo-1560185127-6b0b1d1f8b8e?w=800&q=80';
+              const price = (typeof p.price === 'number') ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.price) : (p.price || '—');
+              return (
+                <div key={p.propertyId} className="property-card">
+                  <div className="property-image-wrapper">
+                    <img src={img} alt={p.title} className="property-image" />
+                  </div>
+                  <div className="property-content">
+                    <h3 className="property-title">{p.title}</h3>
+                    <div className="property-details">
+                      <span className="property-detail">{p.propertyType}</span>
+                      <span className="property-detail">{p.city}{p.state ? `, ${p.state}` : ''}</span>
+                      <span className="property-detail">{p.pincode}</span>
+                    </div>
+                    <div className="property-footer">
+                      <span className="property-posted">Posted by {p.sellerName ?? '—'}</span>
+                      <span className="property-price">{price}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="property-footer">
-                  <span className="property-posted">Posted by X Builder</span>
-                  <span className="property-price">₹45,545</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="property-card">
-              <div className="property-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80" 
-                  alt="Pink house" 
-                  className="property-image"
-                />
-              </div>
-              <div className="property-content">
-                <h3 className="property-title">103/143 West Street, Crows Nest</h3>
-                <div className="property-details">
-                  <span className="property-detail">10 Bedroom</span>
-                  <span className="property-detail">150 M</span>
-                  <span className="property-detail">2 Garage</span>
-                </div>
-                <div className="property-footer">
-                  <span className="property-posted">Posted by X Builder</span>
-                  <span className="property-price">₹45,545</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="property-card">
-              <div className="property-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80" 
-                  alt="Yellow house with lawn" 
-                  className="property-image"
-                />
-              </div>
-              <div className="property-content">
-                <h3 className="property-title">103/143 West Street, Crows Nest</h3>
-                <div className="property-details">
-                  <span className="property-detail">10 Bedroom</span>
-                  <span className="property-detail">150 M</span>
-                  <span className="property-detail">2 Garage</span>
-                </div>
-                <div className="property-footer">
-                  <span className="property-posted">Posted by X Builder</span>
-                  <span className="property-price">₹45,545</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="property-card">
-              <div className="property-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&q=80" 
-                  alt="Lakeside house" 
-                  className="property-image"
-                />
-              </div>
-              <div className="property-content">
-                <h3 className="property-title">103/143 West Street, Crows Nest</h3>
-                <div className="property-details">
-                  <span className="property-detail">10 Bedroom</span>
-                  <span className="property-detail">150 M</span>
-                  <span className="property-detail">2 Garage</span>
-                </div>
-                <div className="property-footer">
-                  <span className="property-posted">Posted by X Builder</span>
-                  <span className="property-price">₹45,545</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="property-card">
-              <div className="property-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&q=80" 
-                  alt="Modern apartment building" 
-                  className="property-image"
-                />
-              </div>
-              <div className="property-content">
-                <h3 className="property-title">103/143 West Street, Crows Nest</h3>
-                <div className="property-details">
-                  <span className="property-detail">10 Bedroom</span>
-                  <span className="property-detail">150 M</span>
-                  <span className="property-detail">2 Garage</span>
-                </div>
-                <div className="property-footer">
-                  <span className="property-posted">Posted by X Builder</span>
-                  <span className="property-price">₹45,545</span>
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       </div>
