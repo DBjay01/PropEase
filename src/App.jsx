@@ -20,6 +20,7 @@ import AboutUs from './pages/AboutUs/AboutUs'
 import AdminPropertyList from './pages/AdminPropertyList/AdminPropertyList'
 import AdminUsersList from './pages/AdminUsersList/AdminUsersList'
 import AddProperty from './pages/AddProperty/AddProperty'
+import BuyerProfile from './pages/BuyerProfile/BuyerProfile'
 
 function App() {
 
@@ -41,6 +42,7 @@ function App() {
             <Route path='PropertyDetailsPage/:propertyId' element={<PropertyDetailsPage />} />
             <Route path='ContactUs' element={<ContactUs />} />
             <Route path='AdminProfile' element={<AdminProfile />} />
+            <Route path='BuyerProfile' element={<BuyerProfile />} />
             <Route path='AdminDashboard' element={<AdminDashboard />} />
             <Route path='SellerPropertiesList' element={<SellerPropertiesList />} />
             <Route path='AboutUs' element={<AboutUs />} />

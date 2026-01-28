@@ -257,6 +257,7 @@ export default function Header() {
                 <li><a href="PropertyListing" className="nav-link">PROPERTIES</a></li>
                 <li><a href="/BuyerDashboard" className="nav-link">DASHBOARD</a></li>
                 <li><a href="/ContactUs" className="nav-link">CONTACT US</a></li>
+                <li><a href="/BuyerProfile" className="nav-link">PROFILE</a></li>
               </>
             )}
 
