@@ -9,9 +9,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [userRole, setUserRole] = useState('buyer'); // 'buyer' or 'seller'
 
-    const navigate = useNavigate()
-
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,11 +31,10 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
-      const token = data.token; // Assuming the token is returned as `token`
+      const token = data.token;
 
-          // Decode the token to extract user data
-    const decodedToken = jwtDecode(token);
-    // console.log('Decoded Token:', decodedToken);
+      // Decode the token to extract user data
+      const decodedToken = jwtDecode(token);
 
       // Store token in localStorage
       localStorage.setItem('token', token);
@@ -44,7 +43,7 @@ export default function LoginPage() {
 
       console.log(data);
 
-       // Redirect to dashboard (based on user role)
+      // Redirect to dashboard (based on user role)
       if (data.user.role === 'SELLER') {
         navigate('/SellerDashboard');
       } else if (data.user.role === 'BUYER') {
@@ -54,17 +53,13 @@ export default function LoginPage() {
       } else {
         throw new Error('Invalid user role');
       }
-
     } catch (err) {
       setError(err.message);
     }
   };
 
-
-
   return (
     <>
-
       <div className="login-page">
         <div className="login-left">
           <div className="login-image-wrapper">
@@ -84,6 +79,33 @@ export default function LoginPage() {
             <p className="login-subtitle">
               Please enter your details to sign in
             </p>
+
+            {/* Role Selector Slider */}
+            <div className="role-selector-container">
+              <div className="role-label">Login as:</div>
+              <div className="role-slider">
+                <input
+                  type="checkbox"
+                  id="role-toggle"
+                  className="role-toggle-input"
+                  checked={userRole === 'seller'}
+                  onChange={(e) => setUserRole(e.target.checked ? 'seller' : 'buyer')}
+                />
+                <label htmlFor="role-toggle" className="role-toggle-label">
+                  <span className="role-toggle-inner">
+                    <span className="role-option buyer-option">
+                      <i className="fas fa-home"></i>
+                      Buyer
+                    </span>
+                    <span className="role-option seller-option">
+                      <i className="fas fa-building"></i>
+                      Seller
+                    </span>
+                  </span>
+                  <span className="role-toggle-switch"></span>
+                </label>
+              </div>
+            </div>
 
             {error && (
               <p style={{ color: 'red', marginBottom: '1rem' }}>

@@ -1,354 +1,206 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import './Header.css';
 
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false);
+  // State to track if mobile menu is open or closed
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // State to store the user's role (ADMIN, SELLER, BUYER, or null)
   const [userRole, setUserRole] = useState(null);
+  
+  // Hooks for navigation and getting current page location
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Run when component loads - check if user is logged in
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        setUserRole(u?.role ?? null);
+      // Get user data from localStorage
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUserRole(userData?.role || null);
       } else {
         setUserRole(null);
       }
-    } catch (e) {
+    } catch (error) {
+      console.error('Error reading user data:', error);
       setUserRole(null);
     }
   }, []);
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
+  // Toggle mobile menu open/close
+  const toggleMobileMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleAuthButton = () => {
+  // Close mobile menu when clicking a link
+  const closeMobileMenu = () => {
+    setIsMenuOpen(false);
+  };
+
+  // Handle login/logout button click
+  const handleAuthClick = () => {
     if (userRole) {
+      // User is logged in - log them out
       localStorage.removeItem('user');
       setUserRole(null);
       navigate('/');
     } else {
+      // User is not logged in - go to login page
       navigate('/');
     }
   };
 
+  // Check if a link is active (current page)
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
   return (
-    <>
-      <style>{`
-        .header {
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(15px); /* Increased blur effect */
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          padding: 0.5rem 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          position: sticky;
-          top: 0;
-          z-index: 1000;
-        }
-
-        .logo-container {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding-left: 1rem;
-        }
-
-        .logoimg {
-          height: 40px;
-        }
-
-        .website-name {
-          font-family: 'Poppins', sans-serif;
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: #3b82f6;
-        }
-
-        .role-badge {
-          font-size: 0.75rem;
-          color: #ffffff;
-          background: #244b8a;
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.9rem;
-          text-transform: uppercase;
-        }
-
-        .navbar-menu {
-          display: flex;
-          align-items: center;
-          gap: 1.5rem;
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-
-        .nav-link {
-          color: #0b121d;
-          font-weight: 500;
-          font-size: 1rem;
-          text-decoration: none;
-          padding: 0.5rem 1rem;
-          border-radius: 20px; /* Rounded box for links */
-          transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
-        }
-
-        .nav-link:hover {
-          background-color: #113c83;
-          color: #ffffff;
-          transform: scale(1.1);
-        }
-
-        .nav-link.active {
-          background-color: #113c83; /* Highlight selected option */
-          color: #ffffff;
-        }
-
-        .login-btn {
-          padding: 0.5rem 1.5rem;
-          border: 2px solid #3b82f6;
-          color: #3b82f6;
-          background: transparent;
-          border-radius: 50px;
-          font-weight: 500;
-          font-size: 0.875rem;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .login-btn:hover {
-          background-color: #3b82f6;
-          color: #ffffff;
-          transform: scale(1.1);
-        }
-
-        .navbar-toggler {
-          display: none;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 0.5rem;
-        }
-
-        .hamburger {
-          width: 24px;
-          height: 2px;
-          background-color: #3b82f6;
-          position: relative;
-          transition: all 0.3s ease;
-        }
-
-        .hamburger::before,
-        .hamburger::after {
-          content: '';
-          position: absolute;
-          width: 24px;
-          height: 2px;
-          background-color: #3b82f6;
-          transition: all 0.3s ease;
-        }
-
-        .hamburger::before {
-          top: -8px;
-        }
-
-        .hamburger::after {
-          top: 8px;
-        }
-
-        .hamburger.active {
-          background-color: transparent;
-        }
-
-        .hamburger.active::before {
-          transform: rotate(45deg);
-          top: 0;
-        }
-
-        .hamburger.active::after {
-          transform: rotate(-45deg);
-          top: 0;
-        }
-
-        @media (max-width: 768px) {
-          .navbar-toggler {
-            display: block;
-          }
-
-          .navbar-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(15px); /* Increased blur effect */
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: none;
-          }
-
-          .navbar-menu.active {
-            display: flex;
-          }
-
-          .navbar-menu li {
-            width: 100%;
-            padding: 0.5rem 0;
-          }
-
-          .login-btn {
-            width: 100%;
-            margin-top: 0.5rem;
-          }
-
-          .navbar {
-            position: relative;
-          }
-        }
-      `}</style>
-
-      <nav className="navbar header">
-        <div className="logo-container">
-          <img src="/logo2.png" alt="Logo" className="logoimg" />
+    <header className="header">
+      <div className="header-container">
+        
+        {/* Logo and Website Name */}
+        <div className="logo-section">
+          <img src="/logo2.png" alt="PropEase Logo" className="logo-image" />
           <span className="website-name">PropEase</span>
           {userRole && <span className="role-badge">{userRole}</span>}
         </div>
 
-        <button className="navbar-toggler" onClick={toggleMenu}>
-          <div className={`hamburger ${isOpen ? 'active' : ''}`}></div>
+        {/* Mobile Menu Toggle Button */}
+        <button 
+          className="mobile-menu-button" 
+          onClick={toggleMobileMenu}
+          aria-label="Toggle menu"
+        >
+          <div className={`hamburger-icon ${isMenuOpen ? 'open' : ''}`}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </button>
 
-        <ul className={`navbar-menu ${isOpen ? 'active' : ''}`}>
+        {/* Navigation Menu */}
+        <nav className={`nav-menu ${isMenuOpen ? 'show' : ''}`}>
+          
+          {/* Admin Navigation Links */}
           {userRole === 'ADMIN' && (
             <>
-              <li>
-                <a
-                  href="/AdminDashboard"
-                  className={`nav-link ${location.pathname === '/AdminDashboard' ? 'active' : ''}`}
-                >
-                  Admin Dashboard
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/AdminPropertyList"
-                  className={`nav-link ${location.pathname === '/AdminPropertyList' ? 'active' : ''}`}
-                >
-                  Manage Properties
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/AdminUsersList"
-                  className={`nav-link ${location.pathname === '/AdminUsersList' ? 'active' : ''}`}
-                >
-                  Users
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/AdminProfile"
-                  className={`nav-link ${location.pathname === '/AdminProfile' ? 'active' : ''}`}
-                >
-                  Profile
-                </a>
-              </li>
+              <a
+                href="/AdminDashboard"
+                className={`nav-link ${isActive('/AdminDashboard') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Dashboard
+              </a>
+              <a
+                href="/AdminPropertyList"
+                className={`nav-link ${isActive('/AdminPropertyList') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Properties
+              </a>
+              <a
+                href="/AdminUsersList"
+                className={`nav-link ${isActive('/AdminUsersList') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Users
+              </a>
+              <a
+                href="/AdminProfile"
+                className={`nav-link ${isActive('/AdminProfile') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Profile
+              </a>
             </>
           )}
 
+          {/* Seller Navigation Links */}
           {userRole === 'SELLER' && (
             <>
-              <li>
-                <a
-                  href="/SellerDashboard"
-                  className={`nav-link ${location.pathname === '/SellerDashboard' ? 'active' : ''}`}
-                >
-                  Seller Dashboard
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/SellerPropertiesList"
-                  className={`nav-link ${location.pathname === '/SellerPropertiesList' ? 'active' : ''}`}
-                >
-                  My Properties
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/AddProperty"
-                  className={`nav-link ${location.pathname === '/AddProperty' ? 'active' : ''}`}
-                >
-                  Add Property
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/AdminProfile"
-                  className={`nav-link ${location.pathname === '/AdminProfile' ? 'active' : ''}`}
-                >
-                  Profile
-                </a>
-              </li>
+              <a
+                href="/SellerDashboard"
+                className={`nav-link ${isActive('/SellerDashboard') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Dashboard
+              </a>
+              <a
+                href="/SellerPropertiesList"
+                className={`nav-link ${isActive('/SellerPropertiesList') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                My Properties
+              </a>
+              <a
+                href="/AddProperty"
+                className={`nav-link ${isActive('/AddProperty') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Add Property
+              </a>
+              <a
+                href="/AdminProfile"
+                className={`nav-link ${isActive('/AdminProfile') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Profile
+              </a>
             </>
           )}
 
+          {/* Buyer/Guest Navigation Links */}
           {(!userRole || userRole === 'BUYER') && (
             <>
-              <li>
-                <a
-                  href="/home"
-                  className={`nav-link ${location.pathname === '/home' ? 'active' : ''}`}
-                >
-                  Home
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/PropertyListing"
-                  className={`nav-link ${location.pathname === '/PropertyListing' ? 'active' : ''}`}
-                >
-                  Properties
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/BuyerDashboard"
-                  className={`nav-link ${location.pathname === '/BuyerDashboard' ? 'active' : ''}`}
-                >
-                  Dashboard
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/ContactUs"
-                  className={`nav-link ${location.pathname === '/ContactUs' ? 'active' : ''}`}
-                >
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/BuyerProfile"
-                  className={`nav-link ${location.pathname === '/BuyerProfile' ? 'active' : ''}`}
-                >
-                  Profile
-                </a>
-              </li>
+              <a
+                href="/home"
+                className={`nav-link ${isActive('/home') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Home
+              </a>
+              <a
+                href="/PropertyListing"
+                className={`nav-link ${isActive('/PropertyListing') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Properties
+              </a>
+              <a
+                href="/BuyerDashboard"
+                className={`nav-link ${isActive('/BuyerDashboard') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Dashboard
+              </a>
+              <a
+                href="/ContactUs"
+                className={`nav-link ${isActive('/ContactUs') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Contact
+              </a>
+              <a
+                href="/BuyerProfile"
+                className={`nav-link ${isActive('/BuyerProfile') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Profile
+              </a>
             </>
           )}
-        </ul>
+        </nav>
 
-        <button className="login-btn" onClick={handleAuthButton}>
+        {/* Login/Logout Button */}
+        <button className="auth-button" onClick={handleAuthClick}>
           {userRole ? 'Log Out' : 'Log In'}
         </button>
-      </nav>
-    </>
+      </div>
+    </header>
   );
 }
