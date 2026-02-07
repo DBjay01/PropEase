@@ -117,7 +117,7 @@ export default function LoginPage() {
               <div className="form-group">
                 <label className="form-label">Email</label>
                 <div className="input-wrapper">
-                  <Mail size={20} className="input-icon" />
+                  {/* <Mail size={20} className="input-icon" /> */}
                   <input
                     type="email"
                     placeholder="Enter your email"
@@ -132,7 +132,7 @@ export default function LoginPage() {
               <div className="form-group">
                 <label className="form-label">Password</label>
                 <div className="input-wrapper">
-                  <Lock size={20} className="input-icon" />
+                  {/* <Lock size={20} className="input-icon" /> */}
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"

@@ -3,6 +3,7 @@ import { ArrowRight, MapPin, Home, TrendingUp, Shield } from 'lucide-react';
 import Header from '../../Component/Header';
 import { fetchWithAuth } from '../../utils/api/fetchWithAuth';
 import './PropertyHeroSection.css';
+import { Link } from 'react-router-dom';
 
 export default function PropertyHeroSection() {
   const [recent, setRecent] = useState([]);
@@ -84,10 +85,12 @@ export default function PropertyHeroSection() {
             </div>
 
             <div className="cta-buttons">
+              <a href="/PropertyListing"> 
               <button className="btn-primary">
                 Explore Properties
                 <ArrowRight size={20} />
               </button>
+              </a>
               <button className="btn-secondary">
                 List Your Property
               </button>
@@ -214,7 +217,7 @@ export default function PropertyHeroSection() {
               <h2 className="section-title-left">Newest Listings</h2>
               <p className="section-subtitle-left">Fresh properties added this week</p>
             </div>
-            <a href="#" className="see-all-link">
+            <a href="/PropertyListing" className="see-all-link">
               View All Properties
               <ArrowRight size={18} />
             </a>
@@ -253,6 +256,11 @@ export default function PropertyHeroSection() {
                 : (p.price || '—');
               
               return (
+                <Link
+                  to={`/PropertyDetailsPage/${p.propertyId}`}
+                  key={p.propertyId}
+                  className="property-card-link"
+                >
                 <div key={p.propertyId} className="property-card">
                   <div className="property-image-wrapper">
                     <img src={img} alt={p.title} className="property-image" />
@@ -280,9 +288,11 @@ export default function PropertyHeroSection() {
                     </div>
                   </div>
                 </div>
+                </Link>
               );
             })}
           </div>
+          
         </div>
       </div>
 
