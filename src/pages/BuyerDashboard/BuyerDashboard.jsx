@@ -1,119 +1,194 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Heart, Calendar, Bell, User, Search, TrendingUp, Eye, MapPin, MessageSquare, Settings, LogOut, Menu, X } from 'lucide-react';
-import { fetchWithAuth } from '../../utils/api/fetchWithAuth';
+import { useNavigate } from 'react-router-dom';
+import { Heart, Bell, Search, Eye, MapPin, LogOut } from 'lucide-react';
 
 export default function BuyerDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
   const [savedPropertiesCount, setSavedPropertiesCount] = useState(0);
   const [savedProperties, setSavedProperties] = useState([]);
+  const [propertyViewCounts, setPropertyViewCounts] = useState([]);
+  const [totalViewCount, setTotalViewCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState('U');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Extract user from localStorage
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (!stored || !token) {
+        navigate('/login');
+        return;
+      }
+
+      const user = JSON.parse(stored);
+      const id = user?.id || user?.userId || user?.user_id || user?.buyerId;
+      const name = user?.name || user?.username || user?.firstName || 'User';
+      
+      if (!id) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
+      
+      setUserId(id);
+      setUserName(String(name).charAt(0).toUpperCase());
+      setIsAuthenticated(true);
+      console.log('User authenticated:', id);
+    } catch (err) {
+      console.error('Auth error:', err);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // Fetch saved properties
+  useEffect(() => {
+    if (!userId || !isAuthenticated) return;
+
     const fetchSavedProperties = async () => {
       try {
-        // Get user ID from localStorage
-        let userId = null;
-        try {
-          const stored = localStorage.getItem('user');
-          if (stored) {
-            const u = JSON.parse(stored);
-            userId = u?.id ?? u?.userId ?? u?.user_id ?? null;
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:8080/api/property-likes/buyer/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        } catch (e) {
-          userId = null;
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            navigate('/login');
+            return;
+          }
+          throw new Error(`Failed: ${response.status}`);
         }
-
-        if (!userId) {
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetchWithAuth(`http://localhost:8080/api/property-likes/buyer/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch saved properties');
         
         const data = await response.json();
-        setSavedPropertiesCount(data.length);
-        setSavedProperties(data);
-        setLoading(false);
+        console.log('Saved properties data:', data);
+        setSavedPropertiesCount(data.length || 0);
+        setSavedProperties(data || []);
       } catch (err) {
         console.error('Error fetching saved properties:', err);
+        setSavedPropertiesCount(0);
+        setSavedProperties([]);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchSavedProperties();
-  }, []);
+  }, [userId, isAuthenticated, navigate]);
+
+  // Track property views
+  useEffect(() => {
+    if (!userId || !isAuthenticated || savedProperties.length === 0) return;
+
+    const trackViews = async () => {
+      for (const like of savedProperties) {
+        const propertyId = like.property?.id || like.propertyId;
+        if (!propertyId) continue;
+
+        try {
+          const token = localStorage.getItem('token');
+          await fetch('http://localhost:8080/api/properties/view', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              propertyId: propertyId,
+              buyerId: userId,
+              viewDate: new Date().toISOString()
+            })
+          });
+        } catch (err) {
+          console.error('Error tracking view:', err);
+        }
+      }
+    };
+
+    trackViews();
+  }, [userId, isAuthenticated, savedProperties]);
+
+  // Fetch view counts
+  useEffect(() => {
+    if (!userId || !isAuthenticated) return;
+
+    const fetchViewCounts = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:8080/api/properties/sellers/${userId}/viewsCount`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const viewCounts = await response.json();
+          setPropertyViewCounts(viewCounts || []);
+          
+          const total = (viewCounts || []).reduce((sum, item) => sum + (item.viewCount || 0), 0);
+          setTotalViewCount(total);
+          console.log('View counts:', viewCounts);
+        } else if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          navigate('/login');
+        } else {
+          setPropertyViewCounts([]);
+          setTotalViewCount(0);
+        }
+      } catch (err) {
+        console.error('Error fetching view counts:', err);
+        setPropertyViewCounts([]);
+        setTotalViewCount(0);
+      }
+    };
+
+    fetchViewCounts();
+  }, [userId, isAuthenticated, navigate]);
 
   const formatPrice = (price) => {
+    if (!price) return '₹0';
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(price);
   };
 
   const stats = [
-    { label: 'Saved Properties', value: savedPropertiesCount, icon: Heart, color: '#3b82f6' },
-    { label: 'Property Views', value: '156', icon: Eye, color: '#10b981' },
-    { label: 'Scheduled Tours', value: '5', icon: Calendar, color: '#f59e0b' },
-    { label: 'New Matches', value: '12', icon: TrendingUp, color: '#8b5cf6' }
+    { label: 'Saved Properties', value: savedPropertiesCount, icon: Heart, color: '#ef4444' },
+    { label: 'Property Views', value: totalViewCount, icon: Eye, color: '#10b981' }
   ];
 
-  const savedPropertiesDummy = [
-    {
-      id: 1,
-      image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400&q=80",
-      title: "103/143 West Street, Crows Nest",
-      price: "₹45,545",
-      location: "Sydney, NSW",
-      bedrooms: 10,
-      bathrooms: 4,
-      area: "150 M",
-      status: "Available"
-    },
-    {
-      id: 2,
-      image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80",
-      title: "245 Oak Avenue, Melbourne",
-      price: "₹67,890",
-      location: "Melbourne, VIC",
-      bedrooms: 4,
-      bathrooms: 3,
-      area: "220 M",
-      status: "Available"
-    },
-    {
-      id: 3,
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80",
-      title: "78 Beach Road, Brisbane",
-      price: "₹38,200",
-      location: "Brisbane, QLD",
-      bedrooms: 3,
-      bathrooms: 2,
-      area: "180 M",
-      status: "Pending"
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  const handlePropertyClick = (property) => {
+    console.log('Navigating to property:', property);
+    const propertyId = property?.id || property?.propertyId;
+    if (propertyId) {
+      navigate(`/PropertyDetailsPage/${propertyId}`, { state: { property } });
     }
-  ];
+  };
 
-  const upcomingTours = [
-    {
-      id: 1,
-      property: "103/143 West Street",
-      date: "Dec 15, 2025",
-      time: "10:00 AM",
-      agent: "John Smith"
-    },
-    {
-      id: 2,
-      property: "245 Oak Avenue",
-      date: "Dec 18, 2025",
-      time: "2:00 PM",
-      agent: "Sarah Johnson"
-    }
-  ];
-
-  const recentActivity = [
-    { id: 1, action: "Saved property", property: "78 Beach Road", time: "2 hours ago" },
-    { id: 2, action: "Scheduled tour", property: "103/143 West Street", time: "5 hours ago" },
-    { id: 3, action: "Viewed property", property: "245 Oak Avenue", time: "1 day ago" }
-  ];
+  if (!isAuthenticated || loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '18px', color: '#6b7280' }}>
+        ⏳ Loading...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -126,112 +201,15 @@ export default function BuyerDashboard() {
 
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+          background: #f9fafb;
         }
 
         .dashboard {
           display: flex;
+          flex-direction: column;
           min-height: 100vh;
           background: #f9fafb;
-        }
-
-        .sidebar {
-          width: 280px;
-          background: white;
-          border-right: 1px solid #e5e7eb;
-          padding: 2rem 0;
-          position: fixed;
-          height: 100vh;
-          overflow-y: auto;
-          transition: transform 0.3s ease;
-          z-index: 100;
-        }
-
-        .sidebar.mobile-hidden {
-          transform: translateX(-100%);
-        }
-
-        .logo-section {
-          display: flex;
-          align-items: center;
-          padding: 0 2rem;
-          margin-bottom: 2rem;
-        }
-
-        .logo-circle {
-          width: 40px;
-          height: 40px;
-          background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-right: 10px;
-        }
-
-        .logo-circle-inner {
-          width: 28px;
-          height: 28px;
-          border: 2px solid white;
-          border-radius: 50%;
-        }
-
-        .logo-text {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: #1a1a2e;
-        }
-
-        .nav-menu {
-          padding: 0 1rem;
-        }
-
-        .nav-item {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.875rem 1rem;
-          margin-bottom: 0.5rem;
-          border-radius: 12px;
-          color: #6b7280;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-decoration: none;
-        }
-
-        .nav-item:hover {
-          background: #f3f4f6;
-          color: #1a1a2e;
-        }
-
-        .nav-item.active {
-          background: #eff6ff;
-          color: #3b82f6;
-        }
-
-        .nav-icon {
-          width: 20px;
-          height: 20px;
-        }
-
-        .nav-label {
-          font-size: 0.9375rem;
-          font-weight: 500;
-        }
-
-        .nav-divider {
-          height: 1px;
-          background: #e5e7eb;
-          margin: 1rem 0;
-        }
-
-        .main-content {
-          flex: 1;
-          margin-left: 280px;
-          transition: margin-left 0.3s ease;
-        }
-
-        .main-content.full-width {
-          margin-left: 0;
+          width: 100%;
         }
 
         .top-bar {
@@ -244,21 +222,15 @@ export default function BuyerDashboard() {
           position: sticky;
           top: 0;
           z-index: 50;
-        }
-
-        .menu-toggle {
-          display: none;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 0.5rem;
-          color: #6b7280;
+          gap: 1rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .search-bar {
           flex: 1;
           max-width: 400px;
           position: relative;
+          min-width: 0;
         }
 
         .search-input {
@@ -269,10 +241,13 @@ export default function BuyerDashboard() {
           font-size: 0.875rem;
           outline: none;
           transition: border-color 0.3s ease;
+          background: #f9fafb;
         }
 
         .search-input:focus {
           border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          background: white;
         }
 
         .search-icon {
@@ -281,12 +256,17 @@ export default function BuyerDashboard() {
           top: 50%;
           transform: translateY(-50%);
           color: #9ca3af;
+          pointer-events: none;
+          width: 18px;
+          height: 18px;
+          flex-shrink: 0;
         }
 
         .top-bar-actions {
           display: flex;
           align-items: center;
           gap: 1rem;
+          margin-left: auto;
         }
 
         .icon-button {
@@ -301,16 +281,19 @@ export default function BuyerDashboard() {
           cursor: pointer;
           transition: all 0.3s ease;
           position: relative;
+          flex-shrink: 0;
+          color: #6b7280;
         }
 
         .icon-button:hover {
           background: #e5e7eb;
+          color: #1a1a2e;
         }
 
         .notification-badge {
           position: absolute;
-          top: -4px;
-          right: -4px;
+          top: -8px;
+          right: -8px;
           width: 18px;
           height: 18px;
           background: #ef4444;
@@ -321,6 +304,7 @@ export default function BuyerDashboard() {
           display: flex;
           align-items: center;
           justify-content: center;
+          border: 2px solid white;
         }
 
         .user-avatar {
@@ -332,12 +316,20 @@ export default function BuyerDashboard() {
           align-items: center;
           justify-content: center;
           color: white;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
+          font-size: 0.875rem;
+          flex-shrink: 0;
         }
 
-        .content-area {
+        .user-avatar:hover {
+          opacity: 0.9;
+        }
+
+        .main-content {
+          flex: 1;
           padding: 2rem;
+          overflow-y: auto;
         }
 
         .page-header {
@@ -358,7 +350,7 @@ export default function BuyerDashboard() {
 
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
           gap: 1.5rem;
           margin-bottom: 2rem;
         }
@@ -371,11 +363,18 @@ export default function BuyerDashboard() {
           display: flex;
           align-items: center;
           gap: 1rem;
+          transition: all 0.3s ease;
+          border: 1px solid #e5e7eb;
+        }
+
+        .stat-card:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          transform: translateY(-2px);
         }
 
         .stat-icon {
-          width: 48px;
-          height: 48px;
+          width: 56px;
+          height: 56px;
           border-radius: 12px;
           display: flex;
           align-items: center;
@@ -397,11 +396,12 @@ export default function BuyerDashboard() {
         .stat-label {
           font-size: 0.875rem;
           color: #6b7280;
+          font-weight: 500;
         }
 
         .dashboard-grid {
           display: grid;
-          grid-template-columns: 2fr 1fr;
+          grid-template-columns: 1fr;
           gap: 2rem;
           margin-bottom: 2rem;
         }
@@ -411,6 +411,7 @@ export default function BuyerDashboard() {
           padding: 1.5rem;
           border-radius: 16px;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e5e7eb;
         }
 
         .card-header {
@@ -418,6 +419,8 @@ export default function BuyerDashboard() {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 1.5rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid #f0f0f0;
         }
 
         .card-title {
@@ -432,10 +435,15 @@ export default function BuyerDashboard() {
           font-weight: 600;
           text-decoration: none;
           cursor: pointer;
+          transition: all 0.3s ease;
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
         }
 
         .view-all-link:hover {
           text-decoration: underline;
+          color: #2563eb;
+          background: #eff6ff;
         }
 
         .property-list {
@@ -452,11 +460,15 @@ export default function BuyerDashboard() {
           border-radius: 12px;
           transition: all 0.3s ease;
           cursor: pointer;
+          align-items: center;
+          background: #fafafa;
         }
 
         .property-item:hover {
           border-color: #3b82f6;
           box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+          background: white;
+          transform: translateX(4px);
         }
 
         .property-image-small {
@@ -465,26 +477,41 @@ export default function BuyerDashboard() {
           border-radius: 8px;
           object-fit: cover;
           flex-shrink: 0;
+          border: 1px solid #e5e7eb;
         }
 
         .property-info {
           flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
         }
 
         .property-name {
           font-size: 0.9375rem;
           font-weight: 600;
           color: #1a1a2e;
-          margin-bottom: 0.25rem;
+          line-height: 1.4;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .property-location-small {
           display: flex;
           align-items: center;
-          gap: 0.25rem;
+          gap: 0.5rem;
           color: #6b7280;
           font-size: 0.8125rem;
-          margin-bottom: 0.5rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .property-location-small svg {
+          flex-shrink: 0;
+          min-width: 14px;
         }
 
         .property-price-small {
@@ -494,11 +521,12 @@ export default function BuyerDashboard() {
         }
 
         .status-badge {
-          padding: 0.25rem 0.75rem;
+          padding: 0.375rem 0.75rem;
           border-radius: 20px;
           font-size: 0.75rem;
           font-weight: 600;
-          align-self: flex-start;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
         .status-available {
@@ -511,305 +539,357 @@ export default function BuyerDashboard() {
           color: #92400e;
         }
 
-        .tour-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+        .empty-state {
+          text-align: center;
+          padding: 3rem 2rem;
+          color: #6b7280;
+          font-size: 1rem;
+        }
+
+        .loading-state {
+          text-align: center;
+          padding: 3rem 2rem;
+          color: #6b7280;
+          font-style: italic;
+        }
+
+        .views-count-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .views-count-item {
+          background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 100%);
           padding: 1rem;
-          border: 1px solid #e5e7eb;
           border-radius: 12px;
-          margin-bottom: 1rem;
+          border-left: 4px solid #3b82f6;
+          transition: all 0.3s ease;
         }
 
-        .tour-info {
-          flex: 1;
+        .views-count-item:hover {
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+          transform: translateY(-2px);
         }
 
-        .tour-property {
-          font-size: 0.9375rem;
-          font-weight: 600;
-          color: #1a1a2e;
-          margin-bottom: 0.25rem;
-        }
-
-        .tour-details {
-          font-size: 0.8125rem;
-          color: #6b7280;
-        }
-
-        .tour-agent {
-          font-size: 0.8125rem;
-          color: #6b7280;
-          margin-top: 0.25rem;
-        }
-
-        .activity-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .activity-item {
-          display: flex;
-          gap: 1rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .activity-item:last-child {
-          border-bottom: none;
-          padding-bottom: 0;
-        }
-
-        .activity-icon-wrapper {
-          width: 36px;
-          height: 36px;
-          background: #eff6ff;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .activity-content {
-          flex: 1;
-        }
-
-        .activity-action {
+        .views-count-property-name {
           font-size: 0.875rem;
           font-weight: 600;
           color: #1a1a2e;
-          margin-bottom: 0.25rem;
+          margin-bottom: 0.5rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
-        .activity-property {
-          font-size: 0.8125rem;
-          color: #6b7280;
-        }
-
-        .activity-time {
+        .views-count-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          background: #3b82f6;
+          color: white;
+          padding: 0.375rem 0.75rem;
+          border-radius: 8px;
           font-size: 0.75rem;
-          color: #9ca3af;
-          margin-top: 0.25rem;
+          font-weight: 700;
         }
 
         @media (max-width: 1024px) {
           .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           }
 
-          .dashboard-grid {
-            grid-template-columns: 1fr;
+          .views-count-container {
+            grid-template-columns: repeat(2, 1fr);
           }
         }
 
         @media (max-width: 768px) {
-          .sidebar {
-            transform: translateX(-100%);
-          }
-
-          .sidebar.mobile-open {
-            transform: translateX(0);
-          }
-
-          .main-content {
-            margin-left: 0;
-          }
-
-          .menu-toggle {
-            display: block;
+          .top-bar {
+            padding: 1rem;
+            gap: 0.5rem;
           }
 
           .search-bar {
-            display: none;
+            max-width: none;
+            flex: 1;
           }
 
-          .stats-grid {
-            grid-template-columns: 1fr;
+          .search-input {
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
           }
 
-          .content-area {
+          .main-content {
             padding: 1rem;
           }
 
           .page-title {
             font-size: 1.5rem;
           }
+
+          .page-subtitle {
+            font-size: 0.875rem;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+          }
+
+          .stat-card {
+            padding: 1rem;
+          }
+
+          .stat-icon {
+            width: 48px;
+            height: 48px;
+          }
+
+          .stat-value {
+            font-size: 1.5rem;
+          }
+
+          .stat-label {
+            font-size: 0.8rem;
+          }
+
+          .dashboard-grid {
+            gap: 1rem;
+          }
+
+          .card {
+            padding: 1rem;
+          }
+
+          .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+          }
+
+          .card-title {
+            font-size: 1rem;
+          }
+
+          .property-image-small {
+            width: 60px;
+            height: 60px;
+          }
+
+          .property-name {
+            font-size: 0.875rem;
+          }
+
+          .property-location-small {
+            font-size: 0.75rem;
+          }
+
+          .property-price-small {
+            font-size: 0.875rem;
+          }
+
+          .views-count-container {
+            grid-template-columns: 1fr;
+          }
+
+          .view-all-link {
+            padding: 0.375rem 0.75rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .top-bar {
+            padding: 0.75rem;
+            flex-wrap: wrap;
+          }
+
+          .search-bar {
+            order: 3;
+            flex-basis: 100%;
+            margin-top: 0.5rem;
+          }
+
+          .search-input {
+            font-size: 0.7rem;
+          }
+
+          .main-content {
+            padding: 0.75rem;
+          }
+
+          .page-title {
+            font-size: 1.25rem;
+          }
+
+          .page-header {
+            margin-bottom: 1rem;
+          }
+
+          .property-item {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 0.75rem;
+          }
+
+          .property-image-small {
+            width: 100%;
+            height: 150px;
+          }
+
+          .card {
+            padding: 0.75rem;
+          }
+
+          .card-header {
+            padding-bottom: 0.5rem;
+          }
+
+          .views-count-container {
+            gap: 0.75rem;
+          }
         }
       `}</style>
 
       <div className="dashboard">
-        {/* Sidebar */}
-        <aside className={`sidebar ₹{sidebarOpen ? 'mobile-open' : 'mobile-hidden'}`}>
-          <div className="logo-section">
-            <div className="logo-circle">
-              <div className="logo-circle-inner"></div>
-            </div>
-            <span className="logo-text">propEase</span>
+        {/* Top Bar */}
+        <div className="top-bar">
+          <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1a1a2e' }}>propEase</div>
+
+          <div className="search-bar">
+            <Search size={18} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search properties..."
+              className="search-input"
+            />
           </div>
 
-          <nav className="nav-menu">
-            <div className={`nav-item ₹{activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
-              <Home className="nav-icon" />
-              <span className="nav-label">Overview</span>
-            </div>
-            <div className={`nav-item ₹{activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}>
-              <Heart className="nav-icon" />
-              <span className="nav-label">Saved Properties</span>
-            </div>
-            <div className={`nav-item ₹{activeTab === 'tours' ? 'active' : ''}`} onClick={() => setActiveTab('tours')}>
-              <Calendar className="nav-icon" />
-              <span className="nav-label">Scheduled Tours</span>
-            </div>
-            <div className={`nav-item ₹{activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>
-              <MessageSquare className="nav-icon" />
-              <span className="nav-label">Messages</span>
-            </div>
-
-            <div className="nav-divider"></div>
-
-            <div className={`nav-item ₹{activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-              <Settings className="nav-icon" />
-              <span className="nav-label">Settings</span>
-            </div>
-            <div className="nav-item">
-              <LogOut className="nav-icon" />
-              <span className="nav-label">Logout</span>
-            </div>
-          </nav>
-        </aside>
+          <div className="top-bar-actions">
+            <button className="icon-button" title="Notifications">
+              <Bell size={20} />
+              <span className="notification-badge">3</span>
+            </button>
+            <div className="user-avatar" title="User profile">{userName}</div>
+            <button 
+              className="icon-button" 
+              title="Logout"
+              onClick={handleLogout}
+              style={{ marginLeft: '0.5rem' }}
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
+        </div>
 
         {/* Main Content */}
-        <div className={`main-content ₹{sidebarOpen ? '' : 'full-width'}`}>
-          {/* Top Bar */}
-          <div className="top-bar">
-            <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-
-            <div className="search-bar">
-              <Search size={18} className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="Search properties..."
-                className="search-input"
-              />
-            </div>
-
-            <div className="top-bar-actions">
-              <button className="icon-button">
-                <Bell size={20} />
-                <span className="notification-badge">3</span>
-              </button>
-              <div className="user-avatar">JD</div>
-            </div>
+        <div className="main-content">
+          <div className="page-header">
+            <h1 className="page-title">Welcome back!</h1>
+            <p className="page-subtitle">Here's what's happening with your property search</p>
           </div>
 
-          {/* Content Area */}
-          <div className="content-area">
-            <div className="page-header">
-              <h1 className="page-title">Welcome back, John!</h1>
-              <p className="page-subtitle">Here's what's happening with your property search</p>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="stats-grid">
-              {stats.map((stat, index) => (
-                <div key={index} className="stat-card">
-                  <div className="stat-icon" style={{ background: `₹{stat.color}15` }}>
-                    <stat.icon size={24} style={{ color: stat.color }} />
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stat.value}</div>
-                    <div className="stat-label">{stat.label}</div>
-                  </div>
+          {/* Stats Grid */}
+          <div className="stats-grid">
+            {stats.map((stat, index) => (
+              <div key={index} className="stat-card">
+                <div className="stat-icon" style={{ background: `${stat.color}15` }}>
+                  <stat.icon size={24} style={{ color: stat.color }} />
                 </div>
-              ))}
-            </div>
-
-            {/* Dashboard Grid */}
-            <div className="dashboard-grid">
-              {/* Saved Properties */}
-              <div className="card">
-                <div className="card-header">
-                  <h2 className="card-title">Saved Properties</h2>
-                  <a className="view-all-link">View All</a>
+                <div className="stat-content">
+                  <div className="stat-value">{stat.value}</div>
+                  <div className="stat-label">{stat.label}</div>
                 </div>
-                {loading ? (
-                  <p style={{ color: '#6b7280' }}>Loading saved properties...</p>
-                ) : savedProperties.length > 0 ? (
-                  <div className="property-list">
-                    {savedProperties.map((like) => {
-                      const property = like.property;
-                      const image = property.images && property.images.length > 0 
-                        ? property.images[0].imageUrl 
-                        : 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80';
-                      
-                      return (
-                        <div key={like.likeId} className="property-item">
-                          <img src={image} alt={property.title} className="property-image-small" />
-                          <div className="property-info">
-                            <div className="property-name">{property.title}</div>
-                            <div className="property-location-small">
-                              <MapPin size={14} />
-                              <span>{property.city}, {property.state}</span>
-                            </div>
-                            <div className="property-price-small">{formatPrice(property.price)}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Dashboard Grid */}
+          <div className="dashboard-grid">
+            {/* Saved Properties Card */}
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Saved Properties</h2>
+                <a href="#" className="view-all-link">View All →</a>
+              </div>
+              {loading ? (
+                <div className="loading-state">Loading saved properties...</div>
+              ) : savedProperties.length > 0 ? (
+                <div className="property-list">
+                  {savedProperties.slice(0, 5).map((like, idx) => {
+                    // Extract property data properly
+                    const property = like.property || like;
+                    const propertyId = property?.id || property?.propertyId || property?.property_id;
+                    const title = property?.title || property?.name || 'Property';
+                    const city = property?.city || 'Unknown';
+                    const state = property?.state || '';
+                    const price = property?.price || 0;
+                    const status = property?.status || 'PENDING';
+                    const images = property?.images || [];
+                    
+                    let imageUrl = 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80';
+                    if (images.length > 0) {
+                      imageUrl = images[0]?.imageUrl || images[0]?.url || images[0];
+                    }
+                    
+                    return (
+                      <div 
+                        key={`${idx}-${propertyId}`}
+                        className="property-item"
+                        onClick={() => handlePropertyClick(property)}
+                      >
+                        <img 
+                          src={imageUrl} 
+                          alt={title} 
+                          className="property-image-small" 
+                          onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80'} 
+                        />
+                        <div className="property-info">
+                          <div className="property-name">{title}</div>
+                          <div className="property-location-small">
+                            <MapPin size={14} />
+                            <span>{city}, {state}</span>
                           </div>
-                          <span className={`status-badge ${property.status === 'AVAILABLE' ? 'status-available' : 'status-pending'}`}>
-                            {property.status}
-                          </span>
+                          <div className="property-price-small">{formatPrice(price)}</div>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p style={{ color: '#6b7280' }}>No saved properties yet.</p>
-                )}
-              </div>
-
-              {/* Right Column */}
-              <div>
-                {/* Upcoming Tours */}
-                <div className="card" style={{ marginBottom: '2rem' }}>
-                  <div className="card-header">
-                    <h2 className="card-title">Upcoming Tours</h2>
-                  </div>
-                  {upcomingTours.map((tour) => (
-                    <div key={tour.id} className="tour-item">
-                      <div className="tour-info">
-                        <div className="tour-property">{tour.property}</div>
-                        <div className="tour-details">{tour.date} at {tour.time}</div>
-                        <div className="tour-agent">Agent: {tour.agent}</div>
+                        <span className={`status-badge ${status === 'AVAILABLE' ? 'status-available' : 'status-pending'}`}>
+                          {status}
+                        </span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-
-                {/* Recent Activity */}
-                <div className="card">
-                  <div className="card-header">
-                    <h2 className="card-title">Recent Activity</h2>
-                  </div>
-                  <div className="activity-list">
-                    {recentActivity.map((activity) => (
-                      <div key={activity.id} className="activity-item">
-                        <div className="activity-icon-wrapper">
-                          <Heart size={18} style={{ color: '#3b82f6' }} />
-                        </div>
-                        <div className="activity-content">
-                          <div className="activity-action">{activity.action}</div>
-                          <div className="activity-property">{activity.property}</div>
-                          <div className="activity-time">{activity.time}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              ) : (
+                <div className="empty-state">📌 No saved properties yet. Start exploring!</div>
+              )}
             </div>
           </div>
+
+          {/* View Analytics Section */}
+          {propertyViewCounts.length > 0 && (
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Property View Analytics</h2>
+                <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '500' }}>
+                  Total: <strong style={{ color: '#10b981', fontSize: '1rem' }}>{totalViewCount}</strong>
+                </span>
+              </div>
+              <div className="views-count-container">
+                {propertyViewCounts.map((item, idx) => (
+                  <div key={idx} className="views-count-item">
+                    <div className="views-count-property-name">
+                      Property ID: {item.propertyId}
+                    </div>
+                    <div className="views-count-badge">
+                      <Eye size={12} />
+                      {item.viewCount || 0} views
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

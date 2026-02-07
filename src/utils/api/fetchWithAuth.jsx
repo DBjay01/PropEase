@@ -2,12 +2,17 @@ export const fetchWithAuth = async (url, options = {}) => {
   const token = localStorage.getItem('token');
   const headers = {
     ...options.headers,
-    Authorization: `Bearer ${token}`,
   };
+
+  // Only add Authorization header if token exists
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   const response = await fetch(url, { ...options, headers });
 
-  if (response.status === 401) {
+  // Only redirect on 401 if user was trying to access a protected resource with a token
+  if (response.status === 401 && token) {
     // Token is invalid or expired, handle logout
     localStorage.removeItem('token');
     localStorage.removeItem('user');
