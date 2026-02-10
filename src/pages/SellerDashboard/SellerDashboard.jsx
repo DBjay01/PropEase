@@ -106,7 +106,7 @@ export default function SellerDashboard() {
     }
 
     try {
-      const response = await fetchWithAuth('http://localhost:8080/api/properties', {
+      const response = await fetchWithAuth('https://exciting-strength-production-8da6.up.railway.app/api/properties', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -156,7 +156,7 @@ export default function SellerDashboard() {
     setEditLoading(true);
     setEditError('');
     try {
-      const response = await fetchWithAuth(`http://localhost:8080/api/properties/${propertyId}`);
+      const response = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/${propertyId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch property details');
       }
@@ -198,7 +198,7 @@ export default function SellerDashboard() {
     setEditLoading(true);
     setEditError('');
     try {
-      const response = await fetchWithAuth(`http://localhost:8080/api/properties/${editingPropertyId}`, {
+      const response = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/${editingPropertyId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -229,7 +229,7 @@ export default function SellerDashboard() {
 
     try {
       // Fetch total views
-      const viewsRes = await fetchWithAuth(`http://localhost:8080/api/properties/sellers/${sellerId}/viewsCount`);
+      const viewsRes = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/sellers/${sellerId}/viewsCount`);
       if (viewsRes.ok) {
         const viewsData = await viewsRes.json();
         const viewsSum = Array.isArray(viewsData) ? viewsData.reduce((acc, item) => acc + (Number(item.viewsCount) || 0), 0) : 0;
@@ -237,14 +237,14 @@ export default function SellerDashboard() {
       }
 
       // Fetch total inquiries
-      const inquiriesRes = await fetchWithAuth(`http://localhost:8080/api/enquiries/seller/${sellerId}/total-count`);
+      const inquiriesRes = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/enquiries/seller/${sellerId}/total-count`);
       if (inquiriesRes.ok) {
         const inquiriesData = await inquiriesRes.json();
         setTotalInquiries(inquiriesData.totalCount || 0);
       }
 
       // Fetch properties
-      const propertiesRes = await fetchWithAuth(`http://localhost:8080/api/properties/seller/${sellerId}`);
+      const propertiesRes = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/seller/${sellerId}`);
       if (propertiesRes.ok) {
         const propertiesData = await propertiesRes.json();
         setTotalProperties(propertiesData.length);
@@ -262,7 +262,7 @@ export default function SellerDashboard() {
       }
 
       // Fetch recent inquiries
-      const inquiriesResponse = await fetchWithAuth(`http://localhost:8080/api/enquiries`);
+      const inquiriesResponse = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/enquiries`);
       if (inquiriesResponse.ok) {
         const inquiriesData = await inquiriesResponse.json();
         const filteredInquiries = inquiriesData

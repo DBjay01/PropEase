@@ -29,7 +29,7 @@ export default function PropertyListingPage() {
   // fire-and-forget POST to count view when user clicks a property
   const sendView = async (propertyId) => {
     try {
-      await fetchWithAuth('http://localhost:8080/api/properties/view', {
+      await fetchWithAuth('https://exciting-strength-production-8da6.up.railway.app/api/properties/view', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ propertyId }),
@@ -43,7 +43,7 @@ export default function PropertyListingPage() {
     const fetchProperties = async () => {
       setLoading(true);
       try {
-        const response = await fetchWithAuth('http://localhost:8080/api/properties');
+        const response = await fetchWithAuth('https://exciting-strength-production-8da6.up.railway.app/api/properties');
         if (!response.ok) throw new Error('Failed to fetch properties');
         const data = await response.json();
         setProperties(data || []);

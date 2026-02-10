@@ -54,7 +54,7 @@ export default function BuyerDashboard() {
     const fetchSavedProperties = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/property-likes/buyer/${userId}`, {
+        const response = await fetch(`https://exciting-strength-production-8da6.up.railway.app/api/property-likes/buyer/${userId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -98,7 +98,7 @@ export default function BuyerDashboard() {
 
         try {
           const token = localStorage.getItem('token');
-          await fetch('http://localhost:8080/api/properties/view', {
+          await fetch('https://exciting-strength-production-8da6.up.railway.app/api/properties/view', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -126,7 +126,7 @@ export default function BuyerDashboard() {
     const fetchViewCounts = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/properties/sellers/${userId}/viewsCount`, {
+        const response = await fetch(`https://exciting-strength-production-8da6.up.railway.app/api/properties/sellers/${userId}/viewsCount`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

@@ -32,7 +32,7 @@ export default function PropertyDetailsPage() {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const response = await fetchWithAuth(`http://localhost:8080/api/properties/${propertyId}`);
+        const response = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/${propertyId}`);
         if (!response.ok) throw new Error('Failed to fetch property');
         const data = await response.json();
         setProperty(data);
@@ -71,7 +71,7 @@ export default function PropertyDetailsPage() {
 
     try {
       const response = await fetchWithAuth(
-        `http://localhost:8080/api/property-likes/${userId}/${propertyIdToUse}`,
+        `https://exciting-strength-production-8da6.up.railway.app/api/property-likes/${userId}/${propertyIdToUse}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -111,7 +111,7 @@ export default function PropertyDetailsPage() {
     };
 
     try {
-      const response = await fetchWithAuth('http://localhost:8080/api/enquiries', {
+      const response = await fetchWithAuth('https://exciting-strength-production-8da6.up.railway.app/api/enquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

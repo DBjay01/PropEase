@@ -48,7 +48,7 @@ export default function SellerPropertiesList() {
     setEditLoading(true);
     setEditError('');
     try {
-      const response = await fetchWithAuth(`http://localhost:8080/api/properties/${propertyId}`);
+      const response = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/${propertyId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch property details');
       }
@@ -91,7 +91,7 @@ export default function SellerPropertiesList() {
     setEditLoading(true);
     setEditError('');
     try {
-      const response = await fetchWithAuth(`http://localhost:8080/api/properties/${editingPropertyId}`, {
+      const response = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/${editingPropertyId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -129,7 +129,7 @@ export default function SellerPropertiesList() {
     
     try {
       const response = await fetchWithAuth(
-        `http://localhost:8080/api/propert/${propertyId}`,
+        `https://exciting-strength-production-8da6.up.railway.app/api/propert/${propertyId}`,
         {
           method: 'DELETE',
           headers: {
@@ -165,7 +165,7 @@ export default function SellerPropertiesList() {
     }
 
     try {
-      const res = await fetchWithAuth(`http://localhost:8080/api/properties/seller/${sellerId}`);
+      const res = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/seller/${sellerId}`);
       if (!res.ok) throw new Error(`Failed to load properties: ${res.status}`);
       const data = await res.json();
 

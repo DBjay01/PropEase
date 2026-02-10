@@ -16,7 +16,7 @@ export default function PropertyHeroSection() {
       setLoadingRecent(true);
       setRecentError('');
       try {
-        const res = await fetchWithAuth('http://localhost:8080/api/properties');
+        const res = await fetchWithAuth('https://exciting-strength-production-8da6.up.railway.app/api/properties');
         if (!res.ok) throw new Error('Failed to fetch properties');
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data?.data || []);

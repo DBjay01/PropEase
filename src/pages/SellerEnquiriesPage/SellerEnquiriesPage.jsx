@@ -32,7 +32,7 @@ export default function SellerEnquiriesPage() {
       }
 
       try {
-        const res = await fetchWithAuth('http://localhost:8080/api/enquiries');
+        const res = await fetchWithAuth('https://exciting-strength-production-8da6.up.railway.app/api/enquiries');
         if (!res.ok) throw new Error('Failed to fetch enquiries');
         const data = await res.json();
 

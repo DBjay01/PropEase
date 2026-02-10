@@ -37,7 +37,7 @@ export default function BuyerProfile() {
       }
 
       try {
-        const res = await fetchWithAuth(`http://localhost:8080/api/users/${userId}`);
+        const res = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/users/${userId}`);
         if (!res.ok) throw new Error('Failed to fetch user details');
         const data = await res.json();
         setUser(data);
@@ -80,7 +80,7 @@ export default function BuyerProfile() {
 
     try {
       const payload = { name: editName, phone: editPhone };
-      const res = await fetchWithAuth(`http://localhost:8080/api/users/${userId}`, {
+      const res = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

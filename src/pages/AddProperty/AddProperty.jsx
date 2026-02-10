@@ -92,7 +92,7 @@ export default function AddProperty() {
     if (formData.status) createPayload.status = formData.status;
 
     try {
-      const createRes = await fetchWithAuth('http://localhost:8080/api/properties', {
+      const createRes = await fetchWithAuth('https://exciting-strength-production-8da6.up.railway.app/api/properties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(createPayload)
@@ -116,7 +116,7 @@ export default function AddProperty() {
         const form = new FormData();
         images.forEach((file) => form.append('images', file)); // backend expects 'images'
 
-        const uploadRes = await fetchWithAuth(`http://localhost:8080/api/properties/${propertyId}/images`, {
+        const uploadRes = await fetchWithAuth(`https://exciting-strength-production-8da6.up.railway.app/api/properties/${propertyId}/images`, {
           method: 'POST',
           body: form
         });

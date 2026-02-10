@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { fetchWithAuth } from '../../utils/api/fetchWithAuth';
 
-const API_BASE_URL = 'http://localhost:8080/api/admin';
+const API_BASE_URL = 'https://exciting-strength-production-8da6.up.railway.app/api/admin';
 
 export default function AdminPropertyList() {
   const [searchTerm, setSearchTerm] = useState('');

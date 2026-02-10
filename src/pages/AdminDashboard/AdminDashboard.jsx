@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { fetchWithAuth } from '../../utils/api/fetchWithAuth';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://exciting-strength-production-8da6.up.railway.app/api';
 
 export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
