@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch('https://exciting-strength-production-8da6.up.railway.app/api/auth/login', {
+      const response = await fetch('http://13.48.136.227/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
